@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pertarungan Epik: whiteindonesia_rak vs gold_indonesia_ark</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0f;
+    color: #e8e0d0;
+    font-family: 'Georgia', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .stars {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(ellipse at 20% 50%, #0d0a1a 0%, #0a0a0f 70%);
+  }
+
+  #game {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .scene { display: none; animation: fadeIn 0.6s ease; }
+  .scene.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .chapter-tag {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #7a6a50;
+    margin-bottom: 1rem;
+  }
+
+  h1.title {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: normal;
+    line-height: 1.3;
+    margin-bottom: 1.5rem;
+    color: #f0e6cc;
+  }
+
+  .battle-img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin: 1.2rem 0;
+    border: 1px solid #2a2018;
+    display: block;
+  }
+
+  .img-fallback {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(135deg, #1a1008 0%, #0d1a2a 100%);
+    border-radius: 8px;
+    border: 1px dashed #3a3020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5a5040;
+    font-size: 13px;
+    margin: 1.2rem 0;
+  }
+
+  .story-text {
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: #cdc0a8;
+    margin-bottom: 1.8rem;
+  }
+
+  .story-text em {
+    color: #e8c870;
+    font-style: normal;
+  }
+
+  .story-text strong {
+    color: #f0e6cc;
+  }
+
+  .fighters {
+    display: flex;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .fighter-card {
+    flex: 1;
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid;
+    text-align: center;
+  }
+
+  .fighter-card.white {
+    background: rgba(200,200,220,0.07);
+    border-color: #8888aa;
+  }
+
+  .fighter-card.gold {
+    background: rgba(200,150,30,0.08);
+    border-color: #aa8830;
+  }
+
+  .fighter-card .name {
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 0.4rem;
+  }
+
+  .fighter-card.white .name { color: #c8c8e0; }
+  .fighter-card.gold  .name { color: #d4a830; }
+
+  .fighter-card .desc {
+    font-size: 0.8rem;
+    color: #8a7a60;
+    line-height: 1.5;
+  }
+
+  .hp-bar-wrap { margin-top: 0.6rem; }
+  .hp-label { font-size: 11px; color: #7a6a50; margin-bottom: 3px; }
+  .hp-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: #1a1810;
+    overflow: hidden;
+  }
+  .hp-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+  .fighter-card.white .hp-fill { background: #8888cc; }
+  .fighter-card.gold  .hp-fill { background: #cc9922; }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .choice-btn {
+    background: transparent;
+    border: 1px solid #3a3020;
+    border-radius: 6px;
+    color: #c8b890;
+    font-family: 'Georgia', serif;
+    font-size: 0.95rem;
+    padding: 0.85rem 1.2rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .choice-btn::before {
+    content: '▶ ';
+    color: #6a5a30;
+    font-size: 0.75rem;
+    margin-right: 6px;
+  }
+
+  .choice-btn:hover {
+    border-color: #7a6a40;
+    background: rgba(120, 100, 50, 0.12);
+    color: #e8d890;
+    transform: translateX(4px);
+  }
+
+  .choice-btn.white-choice:hover {
+    border-color: #7070aa;
+    background: rgba(80, 80, 150, 0.12);
+    color: #d0d0f0;
+  }
+
+  .choice-btn.gold-choice:hover {
+    border-color: #aa8830;
+    background: rgba(160, 120, 30, 0.12);
+    color: #f0d060;
+  }
+
+  .verdict-box {
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border: 1px solid;
+    text-align: center;
+  }
+
+  .verdict-box.white-wins {
+    background: rgba(100,100,180,0.1);
+    border-color: #6060aa;
+  }
+
+  .verdict-box.gold-wins {
+    background: rgba(180,130,20,0.1);
+    border-color: #aa8820;
+  }
+
+  .verdict-box.draw {
+    background: rgba(100,100,100,0.1);
+    border-color: #606060;
+  }
+
+  .verdict-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .verdict-title { font-size: 1.5rem; color: #f0e6cc; margin-bottom: 0.5rem; }
+  .verdict-sub { font-size: 0.9rem; color: #9a8a70; }
+
+  .restart-btn {
+    display: inline-block;
+    margin-top: 2rem;
+    padding: 0.75rem 2rem;
+    background: transparent;
+    border: 1px solid #5a4a30;
+    border-radius: 6px;
+    color: #c8a860;
+    font-family: 'Georgia', serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 1px;
+  }
+
+  .restart-btn:hover {
+    background: rgba(200,160,80,0.1);
+    border-color: #8a7040;
+    color: #e8c870;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1a12;
+    margin: 1.5rem 0;
+  }
+
+  .stat-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin: 3px;
+  }
+
+  .badge-white { background: rgba(120,120,180,0.15); color: #9090cc; border: 1px solid #4a4a80; }
+  .badge-gold  { background: rgba(160,120,20,0.15); color: #c0900; border: 1px solid #6a5020; color: #c09020; }
+
+  .narrator {
+    font-size: 0.88rem;
+    color: #6a5a40;
+    font-style: italic;
+    margin: 0.5rem 0 1rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a2010;
+  }
+
+  /* SPLASH SCREEN */
+  #splash {
+    position: fixed;
+    inset: 0;
+    background: #0a0a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+
+  #splash h2 {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: normal;
+    color: #f0e6cc;
+    line-height: 1.4;
+  }
+
+  #splash p {
+    color: #7a6a50;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+  }
+
+  #splash-btn {
+    margin-top: 1rem;
+    padding: 0.9rem 2.8rem;
+    background: transparent;
+    border: 1px solid #8a7040;
+    border-radius: 6px;
+    color: #e8c870;
+    font-family: 'Georgia', serif;
+    font-size: 1.1rem;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.25s;
+    animation: pulse 2s infinite;
+  }
+
+  #splash-btn:hover {
+    background: rgba(200,160,80,0.12);
+    border-color: #c0a050;
+    color: #f8e090;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(200,160,80,0); }
+    50%       { box-shadow: 0 0 0 8px rgba(200,160,80,0.12); }
+  }
+
+  .vs-text {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #9090cc 0%, #ffffff 45%, #d4a830 55%, #d4a830 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <p style="font-size:11px; letter-spacing:3px; color:#5a4a30;">⚔ PERTARUNGAN EPIK ⚔</p>
+  <div class="vs-text">WHITE vs GOLD</div>
+  <h2>whiteindonesia_rak<br>vs<br>gold_indonesia_ark</h2>
+  <p>Kamu adalah penentu kemenangan</p>
+  <button id="splash-btn" onclick="startGame()">▶ MULAI</button>
+</div>
+
+<div class="stars"></div>
+
+<div id="game" style="display:none;">
+
+  <!-- SCENE 0: INTRO -->
+  <div class="scene active" id="scene-0">
+    <div class="chapter-tag">Prolog · Takdir Memanggil</div>
+    <h1 class="title">Pertarungan Puncak:<br>whiteindonesia_rak vs gold_indonesia_ark</h1>
+
+    <img src="Gambar_oarang_berantem.jpg" class="battle-img" alt="Pertarungan Epik"
+         onerror="this.style.display='none'; document.getElementById('img-fallback-0').style.display='flex'">
+    <div class="img-fallback" id="img-fallback-0" style="display:none;">
+      [ Gambar_oarang_berantem.jpg · taruh di folder yang sama ]
+    </div>
+
+    <div class="fighters">
+      <div class="fighter-card white">
+        <div class="name">⚪ WHITEINDONESIA_RAK</div>
+        <div class="desc">Petarung dari keheningan putih. Dingin, terukur, dan berbahaya.</div>
+        <div class="hp-bar-wrap">
+          <div class="hp-label">Kekuatan</div>
+          <div class="hp-bar"><div class="hp-fill" style="width:85%"></div></div>
+        </div>
+      </div>
+      <div class="fighter-card gold">
+        <div class="name">🟡 GOLD_INDONESIA_ARK</div>
+        <div class="desc">Petarung berapi emas. Ganas, agresif, tak kenal ampun.</div>
+        <div class="hp-bar-wrap">
+          <div class="hp-label">Kekuatan</div>
+          <div class="hp-bar"><div class="hp-fill" style="width:90%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="story-text">
+      Di atas arena yang melegenda, dua kekuatan terbesar Indonesia bersiap bertarung.
+      <em>whiteindonesia_rak</em> — sang putih dengan ketepatan seperti es,
+      dan <em>gold_indonesia_ark</em> — sang emas yang membakar segalanya.
+      <br><br>
+      <strong>Tapi nasib pertarungan ini ada di tanganmu.</strong>
+      Kamu adalah orang ketiga — saksi sekaligus penentu. Satu keputusanmu bisa mengubah segalanya.
+    </p>
+
+    <div class="narrator">Suara gemuruh penonton memenuhi udara. Keduanya saling tatap. Kamu berdiri di antara mereka.</div>
+
+    <div class="choices">
+      <button class="choice-btn" onclick="goTo('scene-1')">Masuk ke arena dan perhatikan keduanya bertarung</button>
+    </div>
+  </div>
+
+  <!-- SCENE 1: RONDE 1 -->
+  <div class="scene" id="scene-1">
+    <div class="chapter-tag">Babak I · Serangan Pertama</div>
+    <h1 class="title">Benturan Pertama</h1>
+
+    <img src="Gambar_oarang_berantem.jpg" class="battle-img" alt="Pertarungan"
+         onerror="this.style.display='none'">
+
+    <p class="story-text">
+      <em>gold_indonesia_ark</em> menyerang duluan — serangkaian pukulan kilat
+      bertubi-tubi mengarah ke <em>whiteindonesia_rak</em>.
+      <br><br>
+      Tapi whiteindonesia_rak bergerak seperti air — mengelak, menyerap, menanti.
+      Tiba-tiba ia berbalik dan menghantam tepat di titik lemah gold_indonesia_ark.
+      <br><br>
+      <strong>Keduanya terhuyung. Skor imbang. Dan matamu menangkap sesuatu...</strong>
+    </p>
+
+    <p class="narrator">gold_indonesia_ark sesekali menahan sisi kirinya. Ada cedera lama di sana.</p>
+
+    <div class="choices">
+      <button class="choice-btn white-choice" onclick="goTo('scene-2a')">
+        Kasih kode ke whiteindonesia_rak — serang sisi kirinya!
+      </button>
+      <button class="choice-btn gold-choice" onclick="goTo('scene-2b')">
+        Kasih isyarat ke gold_indonesia_ark — waspada serangan balik!
+      </button>
+      <button class="choice-btn" onclick="goTo('scene-2c')">
+        Diam saja. Biarkan mereka bertarung secara adil.
+      </button>
+    </div>
+  </div>
+
+  <!-- SCENE 2A: Bantu White -->
+  <div class="scene" id="scene-2a">
+    <div class="chapter-tag">Babak II · Pilihanmu Bergema</div>
+    <h1 class="title">Kode Rahasia</h1>
+
+    <p class="story-text">
+      Kamu mengirimkan isyarat halus ke <em>whiteindonesia_rak</em>.
+      Ia memahaminya dalam sekejap — lalu bergeser ke kiri, memancing gold_indonesia_ark
+      untuk berputar... dan menyerang titik lemah itu dengan sekali hantaman keras.
+      <br><br>
+      <em>gold_indonesia_ark</em> terhuyung. Untuk pertama kalinya, ia terlihat kesulitan.
+      <br><br>
+      <strong>Tapi gold_indonesia_ark melihatmu. Ia tahu ada campur tanganmu.</strong>
+    </p>
+
+    <p class="narrator">Tatapan gold_indonesia_ark menyalak ke arahmu. Ini belum selesai.</p>
+
+    <div class="choices">
+      <button class="choice-btn white-choice" onclick="goTo('scene-3-white-win')">
+        Teruskan bantu whiteindonesia_rak sampai kemenangan penuh
+      </button>
+      <button class="choice-btn" onclick="goTo('scene-3-dramatic')">
+        Mundur — biarkan whiteindonesia_rak selesaikan sendiri dengan bekal keunggulan ini
+      </button>
+    </div>
+  </div>
+
+  <!-- SCENE 2B: Bantu Gold -->
+  <div class="scene" id="scene-2b">
+    <div class="chapter-tag">Babak II · Pilihanmu Bergema</div>
+    <h1 class="title">Peringatan Dini</h1>
+
+    <p class="story-text">
+      Kamu melambai pelan ke arah <em>gold_indonesia_ark</em>.
+      Ia menangkap maksudmu — berbalik tepat saat serangan balik whiteindonesia_rak tiba,
+      lalu memukul dengan penuh tenaga menggunakan momentum putaran itu.
+      <br><br>
+      <strong>BLAAAM.</strong> whiteindonesia_rak terdorong ke sudut arena.
+      <br><br>
+      <em>gold_indonesia_ark</em> kini mendominasi penuh — matanya menyala penuh semangat.
+    </p>
+
+    <p class="narrator">Penonton bergemuruh. Keseimbangan pertarungan bergeser.</p>
+
+    <div class="choices">
+      <button class="choice-btn gold-choice" onclick="goTo('scene-3-gold-win')">
+        Teruskan dukung gold_indonesia_ark — pastikan kemenangannya total
+      </button>
+      <button class="choice-btn" onclick="goTo('scene-3-dramatic')">
+        Mundur — mungkin whiteindonesia_rak bisa bangkit sendiri
+      </button>
+    </div>
+  </div>
+
+  <!-- SCENE 2C: Adil -->
+  <div class="scene" id="scene-2c">
+    <div class="chapter-tag">Babak II · Tanpa Intervensi</div>
+    <h1 class="title">Pertarungan Sejati</h1>
+
+    <p class="story-text">
+      Kamu memilih untuk tidak ikut campur. Pertarungan berjalan murni —
+      <em>whiteindonesia_rak</em> dan <em>gold_indonesia_ark</em>
+      saling menguras segalanya tanpa bantuan siapapun.
+      <br><br>
+      Keduanya semakin lelah. Semakin berdarah. Semakin keras.
+      <br><br>
+      <strong>Dan tiba-tiba — keduanya terjatuh bersamaan.</strong>
+      Arena hening. Wasit bingung. Semua mata menoleh ke arahmu.
+    </p>
+
+    <p class="narrator">Kamu adalah satu-satunya yang masih berdiri. Keputusan ada padamu.</p>
+
+    <div class="choices">
+      <button class="choice-btn white-choice" onclick="goTo('scene-3-white-win')">
+        Angkat tangan whiteindonesia_rak — ia sedikit lebih dulu bangkit
+      </button>
+      <button class="choice-btn gold-choice" onclick="goTo('scene-3-gold-win')">
+        Angkat tangan gold_indonesia_ark — serangannya lebih banyak mendarat
+      </button>
+      <button class="choice-btn" onclick="goTo('scene-3-draw')">
+        Umumkan: ini seri. Keduanya sama-sama juara.
+      </button>
+    </div>
+  </div>
+
+  <!-- SCENE 3: WHITE WINS -->
+  <div class="scene" id="scene-3-white-win">
+    <div class="chapter-tag">Akhir · Kemenangan Putih</div>
+    <h1 class="title">whiteindonesia_rak Menang!</h1>
+
+    <img src="Gambar_oarang_berantem.jpg" class="battle-img" alt="Kemenangan"
+         onerror="this.style.display='none'">
+
+    <div class="verdict-box white-wins">
+      <div class="verdict-icon">⚪✨</div>
+      <div class="verdict-title">WHITEINDONESIA_RAK</div>
+      <div class="verdict-sub">Pemenang Pertarungan Puncak</div>
+    </div>
+
+    <p class="story-text">
+      Dengan keputusanmu, <em>whiteindonesia_rak</em> berdiri tegak di atas arena.
+      Tubuhnya berlumuran peluh dan luka, tapi matanya tetap tenang — seperti lautan setelah badai.
+      <br><br>
+      <em>gold_indonesia_ark</em> terduduk di lantai, napasnya terengah, namun mengangguk hormat.
+      Ia tahu — malam ini, putih lebih unggul.
+      <br><br>
+      <strong>Dan kamu — penentu segalanya — berdiri di tengah sorak sorai yang menggelegar.</strong>
+    </p>
+
+    <span class="stat-badge badge-white">⚪ Whiteindonesia_rak</span>
+    <span class="stat-badge badge-white">Kemenangan Teknis</span>
+    <span class="stat-badge badge-white">Ketepatan & Strategi</span>
+
+    <div style="text-align:center">
+      <button class="restart-btn" onclick="restart()">↺ Mainkan Lagi</button>
+    </div>
+  </div>
+
+  <!-- SCENE 3: GOLD WINS -->
+  <div class="scene" id="scene-3-gold-win">
+    <div class="chapter-tag">Akhir · Kemenangan Emas</div>
+    <h1 class="title">gold_indonesia_ark Menang!</h1>
+
+    <img src="Gambar_oarang_berantem.jpg" class="battle-img" alt="Kemenangan"
+         onerror="this.style.display='none'">
+
+    <div class="verdict-box gold-wins">
+      <div class="verdict-icon">🟡🔥</div>
+      <div class="verdict-title">GOLD_INDONESIA_ARK</div>
+      <div class="verdict-sub">Pemenang Pertarungan Puncak</div>
+    </div>
+
+    <p class="story-text">
+      Api emas menyala hingga detik terakhir.
+      <em>gold_indonesia_ark</em> mengangkat kepalan tangannya —
+      sorot matanya masih membara seperti bara yang tak pernah padam.
+      <br><br>
+      <em>whiteindonesia_rak</em> berdiri, bertepuk tangan pelan untuk lawannya.
+      Kekalahan yang terhormat dari pertarung yang tahu kapan saatnya membungkuk.
+      <br><br>
+      <strong>Kamu telah memilih pemenangmu. Dan arena ini takkan melupakannya.</strong>
+    </p>
+
+    <span class="stat-badge badge-gold">🟡 Gold_indonesia_ark</span>
+    <span class="stat-badge badge-gold">Kemenangan KO</span>
+    <span class="stat-badge badge-gold">Kekuatan & Api</span>
+
+    <div style="text-align:center">
+      <button class="restart-btn" onclick="restart()">↺ Mainkan Lagi</button>
+    </div>
+  </div>
+
+  <!-- SCENE 3: DRAW -->
+  <div class="scene" id="scene-3-draw">
+    <div class="chapter-tag">Akhir · Keseimbangan Sempurna</div>
+    <h1 class="title">Seri — Keduanya Juara!</h1>
+
+    <img src="Gambar_oarang_berantem.jpg" class="battle-img" alt="Pertarungan Seri"
+         onerror="this.style.display='none'">
+
+    <div class="verdict-box draw">
+      <div class="verdict-icon">⚪🤝🟡</div>
+      <div class="verdict-title">DRAW · SERI</div>
+      <div class="verdict-sub">Dua juara yang tak terkalahkan</div>
+    </div>
+
+    <p class="story-text">
+      Kamu melangkah maju, mengangkat tangan <em>keduanya</em> sekaligus.
+      <br><br>
+      Arena meledak dalam tepuk tangan terpanjang yang pernah terdengar.
+      Karena malam ini bukan tentang siapa yang menang —
+      tapi tentang betapa luar biasanya kedua petarung ini.
+      <br><br>
+      <em>whiteindonesia_rak</em> dan <em>gold_indonesia_ark</em> saling berpandangan,
+      lalu tersenyum tipis. Hormat yang tulus antara dua rival sejati.
+      <br><br>
+      <strong>Dan kamu — sang hakim — telah membuat keputusan paling bijak malam ini.</strong>
+    </p>
+
+    <div style="text-align:center">
+      <button class="restart-btn" onclick="restart()">↺ Mainkan Lagi</button>
+    </div>
+  </div>
+
+  <!-- SCENE 3: DRAMATIC -->
+  <div class="scene" id="scene-3-dramatic">
+    <div class="chapter-tag">Babak III · Klimaks</div>
+    <h1 class="title">Pertarungan Terakhir</h1>
+
+    <p class="story-text">
+      Kamu mundur. Membiarkan semua berjalan apa adanya.
+      <br><br>
+      Keduanya mengerahkan seluruh sisa tenaga. Setiap pukulan terasa seperti gempa.
+      <em>whiteindonesia_rak</em> berdarah. <em>gold_indonesia_ark</em> terpincang.
+      Tapi keduanya tak mau berhenti.
+      <br><br>
+      <strong>Lalu... satu momen menentukan tiba.</strong>
+      Sebuah serangan terakhir yang hanya bisa dilakukan satu kali.
+      Dan kamu melihat siapa yang lebih dulu melepaskannya.
+    </p>
+
+    <div class="choices">
+      <button class="choice-btn white-choice" onclick="goTo('scene-3-white-win')">
+        whiteindonesia_rak — serangannya lebih cepat dan tepat
+      </button>
+      <button class="choice-btn gold-choice" onclick="goTo('scene-3-gold-win')">
+        gold_indonesia_ark — serangannya lebih keras dan menghancurkan
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<audio id="snd-gold" preload="auto">
+  <source src="GoldSpeek.mp3" type="audio/mpeg">
+</audio>
+<audio id="snd-white" preload="auto">
+  <source src="WhiteSpeek.mp3" type="audio/mpeg">
+</audio>
+<audio id="snd-bgm" loop preload="auto">
+  <source src="1782220172573_Forsaken_Citadel__Last_Stand.mp3" type="audio/mpeg">
+</audio>
+
+<!-- MEME VIDEO -->
+<video id="meme-vid" src="meme.mp4" loop muted playsinline
+  style="
+    position: fixed;
+    width: 130px;
+    border-radius: 8px;
+    border: 2px solid #3a3020;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    z-index: 8888;
+    bottom: 16px;
+    left: 16px;
+    cursor: pointer;
+    transition: opacity 0.4s;
+    opacity: 0;
+    pointer-events: none;
+  "
+></video>
+
+<style>
+@keyframes flyAcross {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--fly-x), var(--fly-y)) rotate(var(--fly-rot)); opacity: 0; }
+}
+</style>
+
+<script>
+const gold  = document.getElementById('snd-gold');
+const white = document.getElementById('snd-white');
+const bgm   = document.getElementById('snd-bgm');
+const meme  = document.getElementById('meme-vid');
+
+/* ── MEME VIDEO LOGIC ── */
+
+function showMemeAtCorner() {
+  meme.style.animation = 'none';
+  meme.style.bottom = '16px';
+  meme.style.left   = '16px';
+  meme.style.top    = 'auto';
+  meme.style.right  = 'auto';
+  meme.style.transform = 'none';
+  meme.style.opacity = '1';
+  meme.style.pointerEvents = 'auto';
+  meme.currentTime = 0;
+  meme.play().catch(() => {});
+}
+
+function hideMeme() {
+  meme.style.opacity = '0';
+  meme.style.pointerEvents = 'none';
+  setTimeout(() => meme.pause(), 400);
+}
+
+function launchMemeFly() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Mulai dari kanan atas
+  const startX = vw - 160;
+  const startY = 16;
+
+  // Terbang ke kiri bawah (relatif dari posisi start)
+  const flyX = -(vw - 160) + 'px';
+  const flyY = (vh - 160) + 'px';
+  const rot  = (Math.random() > 0.5 ? 1 : -1) * (360 + Math.floor(Math.random() * 360)) + 'deg';
+
+  meme.style.setProperty('--fly-x', flyX);
+  meme.style.setProperty('--fly-y', flyY);
+  meme.style.setProperty('--fly-rot', rot);
+
+  // Posisi awal: kanan atas
+  meme.style.animation = 'none';
+  meme.style.top    = startY + 'px';
+  meme.style.left   = startX + 'px';
+  meme.style.bottom = 'auto';
+  meme.style.right  = 'auto';
+  meme.style.transform = 'none';
+  meme.style.opacity   = '1';
+  meme.style.pointerEvents = 'none';
+  meme.currentTime = 0;
+  meme.play().catch(() => {});
+
+  // Force reflow
+  void meme.offsetWidth;
+
+  const dur = 2.5 + Math.random() * 1.5;
+  meme.style.animation = `flyAcross ${dur}s ease-in forwards`;
+
+  setTimeout(() => {
+    meme.style.animation  = 'none';
+    meme.style.opacity    = '0';
+    meme.style.pointerEvents = 'none';
+    meme.pause();
+  }, dur * 1000 + 100);
+}
+
+// Jadwal random: tampil diam di pojok ATAU terbang
+function scheduleMeme() {
+  // Jeda acak 8–20 detik antar kemunculan
+  const delay = (8 + Math.random() * 12) * 1000;
+
+  setTimeout(() => {
+    const mode = Math.random();
+
+    if (mode < 0.45) {
+      // Mode 1: Muncul diam di kiri bawah, lalu hilang setelah beberapa detik
+      showMemeAtCorner();
+      const showDur = (4 + Math.random() * 4) * 1000;
+      setTimeout(() => {
+        hideMeme();
+        scheduleMeme();
+      }, showDur);
+
+    } else {
+      // Mode 2: Langsung terbang dari kiri atas ke kanan bawah sambil muter
+      launchMemeFly();
+      const flyDur = 4500;
+      setTimeout(() => scheduleMeme(), flyDur);
+    }
+
+  }, delay);
+}
+
+/* ── GAME LOGIC ── */
+
+function startGame() {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('game').style.display   = 'block';
+
+  // Audio sequence
+  gold.play();
+  gold.addEventListener('ended', () => white.play(), { once: true });
+  white.addEventListener('ended', () => bgm.play(),  { once: true });
+
+  // UNLOCK video langsung dari konteks klik ini (wajib biar browser izinkan)
+  meme.play().then(() => {
+    meme.pause();
+    meme.currentTime = 0;
+    // Baru sekarang jadwalkan kemunculan meme
+    setTimeout(() => {
+      showMemeAtCorner();
+      setTimeout(() => {
+        hideMeme();
+        scheduleMeme();
+      }, 5000);
+    }, 1000);
+  }).catch(() => {
+    // Kalau tetap gagal, coba tanpa unlock
+    setTimeout(() => {
+      showMemeAtCorner();
+      setTimeout(() => {
+        hideMeme();
+        scheduleMeme();
+      }, 5000);
+    }, 1000);
+  });
+}
+
+function goTo(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const next = document.getElementById(id);
+  if (next) {
+    next.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function restart() {
+  goTo('scene-0');
+}
+</script>
+</body>
+</html>
